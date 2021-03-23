@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 botKey.py
+coinbase.txt
