@@ -1,5 +1,6 @@
 import discord
+import botKey
 
-print("Testing for Git!")
+key = botKey.key
 
-print("Message number 2!")
+print("Testing for Git")
