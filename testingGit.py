@@ -31,7 +31,23 @@ async def on_message(message):
     if message.content.startswith('$hello'):
         await message.channel.send('Hello from bot!')
 
-    
+    if message.content.startswith('$currency'):
+        await message.channel.send("Here are the currencies that are available to trade on Coinbase Pro:")
+        response = cbproClient.get_currencies()
+        availArr = []
+        for element in response:
+            
+            status = element["display_name"]
+            print(element[status])
+            
+            '''
+            if element['status'] == "online":
+                availArr.append()
+            else:
+                continue
+            '''
+        await message.channel.send(availArr)
+        
 
     if message.content.startswith('$BTC-GBP'):
         currentPrice = crypto('BTC-GBP')
@@ -41,7 +57,7 @@ async def on_message(message):
 def crypto(cryptoID):
         cryptoResponse = cbproClient.get_product_24hr_stats(str(cryptoID))
         #jsonCryptoData = json.loads(cryptoResponse.text)
-        quote = 'Cuurrent ' + str(cryptoID) + ' price: £' + cryptoResponse['open']
+        quote = 'Current ' + str(cryptoID) + ' price: £' + cryptoResponse['open']
         return(quote)
 
 
