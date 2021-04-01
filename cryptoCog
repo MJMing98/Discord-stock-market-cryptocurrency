@@ -1,0 +1,13 @@
+from discord import TextChannel, GroupChannel, Member, Game
+import discord.ext.commands as dec
+
+class Crypto(dec.Cog):
+
+    def __init__(self, bot, ctx):
+        self.bot = bot
+        ctx.send("Crypto cog currently in use, how may I help?")
+
+    @dec.command()
+    async def searchPrice(self, ctx, arg):
+        ctx.send("Searching up prices...")
+        pc.get_currencies(str(arg))
