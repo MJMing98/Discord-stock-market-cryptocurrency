@@ -26,6 +26,8 @@ smClient = TDClient(smkey)
 # Create public coinbase pro client instance
 cbproClient = cbpro.PublicClient()
 
+#sSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+
 # Called when the bot is ready for use
 @discClient.event
 async def on_ready():
@@ -42,7 +44,7 @@ async def on_member_join(Member):
 )
 async def initResponse(ctx):
     await ctx.send("Hi, my name is {}, how may I help?".format(discClient.name))
-    
+
 
 # Create another event for when bot receives a message
 # Keep in mind, we don't want the bot to respond to messages that are sent by the bot user aka us!
