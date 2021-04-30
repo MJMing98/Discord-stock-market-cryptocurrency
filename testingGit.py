@@ -8,6 +8,7 @@ import stockmarketKey
 from twelvedata import TDClient
 import discord.ext.commands as dec
 from discord import Member
+from discord import message
 
 smkey = stockmarketKey.SMkey
 key = botKey.key
@@ -26,8 +27,6 @@ smClient = TDClient(smkey)
 # Create public coinbase pro client instance
 cbproClient = cbpro.PublicClient()
 
-#sSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
-
 # Called when the bot is ready for use
 @discClient.event
 async def on_ready():
@@ -35,8 +34,8 @@ async def on_ready():
 
 # Called when new members join the channel
 @discClient.event
-async def on_member_join(Member):
-    await message.channel.send('Welcome to the channel, {}!'.format(Member.name))
+async def on_member_join(Member, ctx):
+    await ctx.send('Welcome to the channel, {}!'.format(Member.name))
 
 # Create an event for when the bot receives a message
 @discClient.command(
