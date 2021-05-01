@@ -1,17 +1,15 @@
 import discord
-import botKey
 import cbpro
 import requests
 import json
 import string
-import stockmarketKey
 from twelvedata import TDClient
 import discord.ext.commands as dec
 from discord import Member
 from discord import message
+from financeCog import Crypto
 
-smkey = stockmarketKey.SMkey
-key = botKey.key
+
 
 # Create bot instance
 discClient = dec.Bot(command_prefix="!")
@@ -21,12 +19,6 @@ if __name__ == "__main__":
 
     discClient.run(token, reconnect=True)
 
-# Create twelveData client instance
-smClient = TDClient(smkey)
-
-# Create public coinbase pro client instance
-cbproClient = cbpro.PublicClient()
-
 # Called when the bot is ready for use
 @discClient.event
 async def on_ready():
@@ -35,6 +27,7 @@ async def on_ready():
 # Called when new members join the channel
 @discClient.event
 async def on_member_join(Member, ctx):
+    "Introduces a member into the channel."
     await ctx.send('Welcome to the channel, {}!'.format(Member.name))
 
 # Create an event for when the bot receives a message
@@ -42,7 +35,12 @@ async def on_member_join(Member, ctx):
     name="help"
 )
 async def initResponse(ctx):
-    await ctx.send("Hi, my name is {}, how may I help?".format(discClient.name))
+    await ctx.send("Hi, my name is {}, how may I help?".format(discClient.user))
+
+
+# Add cogs into main bot code
+discClient.add_cog(Crypto(discClient))
+
 
 
 # Create another event for when bot receives a message
