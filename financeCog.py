@@ -11,7 +11,7 @@ key = botKey.key
 
 # Cryptocurrency cog
 class Crypto(dec.Cog):
-    "Cog for cryptocurrency"
+    '''Cog for cryptocurrency'''
 
     def __init__(self, bot):
         
@@ -20,12 +20,32 @@ class Crypto(dec.Cog):
         # Create public coinbase pro client instance
         cbproClient = cbpro.PublicClient()
 
+    @dec.group(
+        name='crypto',
+        case_insensitive=True,
+        invoke_without_command=True,
+        pass_context=True
+    )
+
     # Example would be 'BTC-GBP'
-    async def crypto(self, ctx, cbproClient, cryptoID):
-       
-        await ctx.send("Please input valid cryptoID (example, BTC-GBP)!")
-       
-        cryptoResponse = cbproClient.get_product_24hr_stats(str(cryptoID))
+    async def crypto(self, ctx, cbproClient):
+        
+        # Creates a checking function, returns author and channel names from context and assigns it to our received msg
+        # Done so that the bot only responds to the user that invoked the function
+        def check(msg):
+            return msg.author == ctx.author and msg.channel == ctx.channel
+
+        await ctx.send("Please input cryptocurrency keyword (e.g. BTC or ETC)!")
+        cryptoKeyword = await self.bot.wait_for('message', check=check)
+
+        await ctx.send("Please input currency keyword (e.g. USD or GBP)!")
+        currencyKeyword = await self.bot.wait_for('message', check=check)
+
+        cryptoID = cryptoKeyword + "-" + currencyKeyword
+        del cryptoKeyword
+        del currencyKeyword
+
+        cryptoResponse = cbproClient.get_product_24hr_stats(cryptoID)
         #jsonCryptoData = json.loads(cryptoResponse.text)
         quote = 'Current ' + str(cryptoID) + ' price: £' + cryptoResponse['open']
         await ctx.send(quote)
