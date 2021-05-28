@@ -2,8 +2,12 @@ import discord
 import discord.ext.commands as dec
 from discord import Member
 from discord import message
+from financeCog import News
+
+'''
 from financeCog import Crypto
 from financeCog import StockMarket
+'''
 
 discClient = dec.Bot(command_prefix="!")
 
@@ -20,12 +24,10 @@ async def on_member_join(Member, ctx):
 
 # Create an event for when the bot receives a message
 @discClient.command(
-    name="help"
+    name="HelpMe"
 )
 async def initResponse(ctx):
     await ctx.send("Hi, my name is {}, how may I help?".format(discClient.user))
-
-
 
 # Create bot instance
 if __name__ == "__main__":
@@ -34,8 +36,11 @@ if __name__ == "__main__":
 
     # INSERT COGS HERE
     # Add cogs into main bot code
+    '''
     discClient.add_cog(Crypto(discClient))
     discClient.add_cog(StockMarket(discClient))
+    '''
+    discClient.add_cog(News(discClient))
 
     discClient.run(token, reconnect=True)
 

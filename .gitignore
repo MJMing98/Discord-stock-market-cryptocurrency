@@ -128,7 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-botKey.py
+botKey.key
 coinbase.txt
 GitHubPAC.txt
-stockmarketKey.py
+stockmarketKey.key
+financeNews.key
