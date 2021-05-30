@@ -2,7 +2,10 @@ import discord
 import discord.ext.commands as dec
 from discord import Member
 from discord import message
+from discord.ext.commands import bot
 from financeCog import News
+from financeCog import Crypto
+
 
 '''
 from financeCog import Crypto
@@ -14,7 +17,7 @@ discClient = dec.Bot(command_prefix="!")
 # Called when the bot is ready for use
 @discClient.event
 async def on_ready():
-    print('We have logged in as {discClient.user}')
+    print(f'We have logged in as {discClient.user} - {discClient.user.id}')
 
 # Called when new members join the channel
 @discClient.event
@@ -37,12 +40,12 @@ if __name__ == "__main__":
     # INSERT COGS HERE
     # Add cogs into main bot code
     '''
-    discClient.add_cog(Crypto(discClient))
     discClient.add_cog(StockMarket(discClient))
     '''
     discClient.add_cog(News(discClient))
+    discClient.add_cog(Crypto(discClient))
 
-    discClient.run(token, reconnect=True)
+    discClient.run(token, bot = True, reconnect=True)
 
     
 
