@@ -125,17 +125,36 @@ class Crypto(dec.Cog):
 
             try:
                 url = ('https://api.coinbase.com/v2/prices/{inputKeyword}/spot'.format(inputKeyword = cryptoID))
-                response = requests.get(url).json()
-                data = response['data']
+                response = requests.get(url)
+                response.raise_for_status()
+                data = (response.json())['data']
 
                 quote = 'Current stock ' + cryptoID + ' price: ' + data["currency"] + data['amount']
                 await ctx.send(quote)
 
-            except:
+            # Error handling for HTTP requests
+            except requests.HTTPError as exception:
+                print(exception)
+                
+                # Obtain first character from exception, which is the statuscode
+                statusCode = str(exception).split()[0]
 
-                # INSERT ERROR HANDLING CODE HERE
-                print("Error!")
-            
+                if statusCode == '400':
+
+                    error = str(exception).split(': ', 2)
+                    errorMsg = error[1]
+                    
+                    async with ctx.typing():
+                        await ctx.send("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
+                        await asyncio.sleep(2)
+
+                # Internal server error 
+                elif statusCode == '500':
+                    
+                    async with ctx.typing():
+                        await ctx.send("Oops! Server is down, please try again later!")
+                        await asyncio.sleep(2)
+
         else:
             
             # input argument returns a list
@@ -144,15 +163,42 @@ class Crypto(dec.Cog):
             
             cryptoID = cryptoKeyword + '-' + currencyKeyword
             try:
+                # URL format of HTTPs request
                 url = ('https://api.coinbase.com/v2/prices/{inputKeyword}/spot'.format(inputKeyword = cryptoID))
-                response = requests.get(url).json()
-                data = response['data']
+                response = requests.get(url)
+
+                # Check status from the returned response, enter except loop if returned response has an error message
+                response.raise_for_status()
+
+                # Returns the object form of the returned JSON response, and have the bot print out the final prices
+                data = (response.json())['data']
 
                 quote = 'Current stock ' + cryptoID + ' price: ' + data["currency"] + data['amount']
                 await ctx.send(quote)
-            except:
-                # INSERT ERROR HANDLING CODE HERE
-                print("Error!")
+            
+            # Error handling for HTTP requests
+            except requests.HTTPError as exception:
+                print(exception)
+                
+                # Obtain first character from exception, which is the statuscode
+                statusCode = str(exception).split()[0]
+
+                # Client error, most probably caused by typo for currency
+                if statusCode == '400':
+
+                    error = str(exception).split(': ', 2)
+                    errorMsg = error[1]
+                    
+                    async with ctx.typing():
+                        await ctx.send("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
+                        await asyncio.sleep(2)
+
+                # Internal server error 
+                elif statusCode == '500':
+                    
+                    async with ctx.typing():
+                        await ctx.send("Oops! Server is down, please try again later!")
+                        await asyncio.sleep(2)
 
     @crypto.command(
         name="help",
@@ -165,8 +211,8 @@ class Crypto(dec.Cog):
     async def help(self, ctx):
         async with ctx.typing():
             await asyncio.sleep(0.75)
-        await ctx.send("The crypto command is used to check for cryptocurrency prices!")
-        await ctx.send("Here are the available cryptocurrencies that are supported by the bot:")
+        await ctx.send("The !crypto command is used to check for cryptocurrency prices!")
+        await ctx.send("Here are the available native currencies that are supported by the bot:")
 
         async with ctx.typing():
             currencyList = []
@@ -178,66 +224,43 @@ class Crypto(dec.Cog):
 
             await asyncio.sleep(1.5)
         
+        print(currencyList)
+
         firstHalf = currencyList[:int(len(currencyList)/2)]
         secondHalf = currencyList[int(len(currencyList)/2):]
 
         await ctx.send('\n'.join(firstHalf))
-        await ctx.send('\n'.join(secondHalf)) 
+        await ctx.send('\n'.join(secondHalf))
 
+        await ctx.send("First input in a crytpcurrency keyword, then the currency keyword to obtain the current market pair list price.")
+        await ctx.send("Example: !crypto BTC GBP")
 
-
-'''
 # Stock market cog
 class StockMarket(dec.Cog):
-    "Cog for stock markets"
+    """Cog for stock markets"""
 
     def __init__(self, bot):
 
         self.bot = bot
-        twelvedataClient = TDClient(smkey)
 
-'''
+    @dec.group(
+        name='stock',
+        case_insensitive=True,
+        invoke_without_command=True,
+        pass_context=True,
+        usage = ['stockInputs']
+    )
 
-'''
-
-# Create another event for when bot receives a message
-# Keep in mind, we don't want the bot to respond to messages that are sent by the bot user aka us!
-@discClient.event
-async def on_message(message):
-    # Check the author of the message, if it's by us, return
-    if message.author == discClient.user:
-        return
-
-    # Check if the message sent is a command (in this case, $hello command, which is user defined)
-    if message.content.startswith('$hello'):
-        await message.channel.send('Hello from bot!')
-
-    if message.content.startswith('$currency'):
-        await message.channel.send("Here are the currencies that are available to trade on Coinbase Pro:")
-        response = cbproClient.get_currencies()
-        availArr = []
-        for element in response:
-            
-            status = element["display_name"]
-            print(element[status])
-            
-            if element['status'] == "online":
-                availArr.append()
-            else:
-                continue
-
-        await message.channel.send(availArr)
+    async def stock(self, ctx, *inputs):
         
+        if ctx.invoked_subcommand is not None:
+            return
 
-    if message.content.startswith('$BTC-GBP'):
-        currentPrice = crypto('BTC-GBP')
-        await message.channel.send(currentPrice)
-
-# Example would be 'BTC-GBP'
-def crypto(cryptoID):
-        cryptoResponse = cbproClient.get_product_24hr_stats(str(cryptoID))
-        #jsonCryptoData = json.loads(cryptoResponse.text)
-        quote = 'Current ' + str(cryptoID) + ' price: £' + cryptoResponse['open']
-        return(quote)
-
-'''
+        if input:
+            print("Do something")
+            # QUERY API FOR DATA
+        
+        else:
+            print("Do something")
+            # QUERY API FOR DATA WITHOUT ANY INPUTS
+    

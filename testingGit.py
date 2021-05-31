@@ -3,14 +3,8 @@ import discord.ext.commands as dec
 from discord import Member
 from discord import message
 from discord.ext.commands import bot
-from financeCog import News
-from financeCog import Crypto
+from financeCog import News, Crypto, StockMarket
 
-
-'''
-from financeCog import Crypto
-from financeCog import StockMarket
-'''
 
 discClient = dec.Bot(command_prefix="!")
 
@@ -37,11 +31,7 @@ if __name__ == "__main__":
     with open("botKey.key") as key:
         token = key.read()
 
-    # INSERT COGS HERE
-    # Add cogs into main bot code
-    '''
     discClient.add_cog(StockMarket(discClient))
-    '''
     discClient.add_cog(News(discClient))
     discClient.add_cog(Crypto(discClient))
 
