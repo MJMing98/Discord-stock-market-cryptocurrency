@@ -256,11 +256,146 @@ class StockMarket(dec.Cog):
         if ctx.invoked_subcommand is not None:
             return
 
-        if input:
-            print("Do something")
-            # QUERY API FOR DATA
-        
+        if inputs:
+                        
+            # input argument returns a list
+            stockKeyword = inputs[0]
+            currencyKeyword = inputs[1]
+            
+            try:
+                # URL format of HTTPs request
+                # First request for stock data
+                urlStock = ("https://api.twelvedata.com/time_series?symbol={inputKeyword}&interval=1min&outputsize=1&apikey={inputApiKey}".format(inputKeyword = stockKeyword, inputApiKey = smkey))
+                responseStock = requests.get(urlStock)
+
+                # Check status from the returned response, enter except loop if returned response has an error message
+                responseStock.raise_for_status()
+
+                # Returns the object form of the returned JSON response, and have the bot print out the final prices
+                testdataStock = (responseStock.json())
+                testdataStock.raise_for_status()
+
+                print(testdataStock)
+                
+                dataStock = (responseStock.json())['values'][0]
+                
+                dataExchangeRate = 1
+
+                # TwelveData API runs on USD by default, so if the input data is not USD, we can query an exchange rate and multiply
+                # the queried exchange rate together with the price for the queried stock to change the currency
+                if currencyKeyword != "USD":
+                    urlExchangeRate = ("https://api.twelvedata.com/exchange_rate?symbol=USD/{inputCurrency}&apikey={inputApiKey}".format(inputCurrency = currencyKeyword, inputApiKey = smkey))
+                    responseExchangeRate = requests.get(urlExchangeRate)
+                    responseExchangeRate.raise_for_status()
+
+                    # Do the same thing for exchange rate
+                    dataExchangeRate = (responseExchangeRate.json())['rate']
+
+                newPrice = float(dataStock['close']) * dataExchangeRate
+
+                quote = 'Current stock ' + stockKeyword + ' price: ' + currencyKeyword + str(newPrice)
+                await ctx.send(quote)
+            
+            # Error handling for HTTP requests
+            except requests.HTTPError as exception:
+                print(exception)
+                
+                # Obtain first character from exception, which is the statuscode
+                statusCode = str(exception).split()[0]
+
+                # Client error, most probably caused by typo for currency
+                if statusCode == '400':
+
+                    error = str(exception).split(': ', 2)
+                    errorMsg = error[1]
+                    
+                    async with ctx.typing():
+                        await ctx.send("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
+                        await asyncio.sleep(2)
+
+                # Internal server error 
+                elif statusCode == '500':
+                    
+                    async with ctx.typing():
+                        await ctx.send("Oops! Server is down, please try again later!")
+                        await asyncio.sleep(2)
+                
+                # Too many requests error 
+                elif statusCode == '429':
+                    
+                    async with ctx.typing():
+                        await ctx.send("Oops! Too many requests have been made, please try again tomorrow!")
+                        await asyncio.sleep(2)
+            
         else:
-            print("Do something")
-            # QUERY API FOR DATA WITHOUT ANY INPUTS
+            # Creates a checking function, returns author and channel names from context and assigns it to our received msg
+            # Done so that the bot only responds to the user that invoked the function
+            def check(msg):
+                return msg.author == ctx.author and msg.channel == ctx.channel
+
+            await ctx.send("Please input stock keyword (e.g. AAPL for Apple or GOOG for Google)!")
+            stockKeyword = await self.bot.wait_for('message', check=check)
+
+            await ctx.send("Please input currency keyword (e.g. USD or GBP)!")
+            currencyKeyword = await self.bot.wait_for('message', check=check)
+
+            try:
+                # URL format of HTTPs request
+                # First request for stock data
+                urlStock = ("https://api.twelvedata.com/time_series?symbol={inputKeyword}&interval=1min&outputsize=1&apikey={inputApiKey}".format(inputKeyword = stockKeyword, inputApiKey = smkey))
+                responseStock = requests.get(urlStock)
+
+                # Check status from the returned response, enter except loop if returned response has an error message
+                responseStock.raise_for_status()
+
+                # Returns the object form of the returned JSON response, and have the bot print out the final prices
+                dataStock = (responseStock.json())['values'][0]
+                
+                dataExchangeRate = 1
+
+                # TwelveData API runs on USD by default, so if the input data is not USD, we can query an exchange rate and multiply
+                # the queried exchange rate together with the price for the queried stock to change the currency
+                if currencyKeyword != "USD":
+                    urlExchangeRate = ("https://api.twelvedata.com/exchange_rate?symbol=USD/{inputCurrency}&apikey={inputApiKey}".format(inputCurrency = currencyKeyword, inputApiKey = smkey))
+                    responseExchangeRate = requests.get(urlExchangeRate)
+                    responseExchangeRate.raise_for_status()
+
+                    # Do the same thing for exchange rate
+                    dataExchangeRate = (responseExchangeRate.json())['rate']
+
+                newPrice = float(dataStock['close']) * dataExchangeRate
+
+                quote = 'Current stock ' + stockKeyword + ' price: ' + currencyKeyword + str(newPrice)
+                await ctx.send(quote)
+            
+            # Error handling for HTTP requests
+            except requests.HTTPError as exception:
+                print(exception)
+                
+                # Obtain first character from exception, which is the statuscode
+                statusCode = str(exception).split()[0]
+
+                # Client error, most probably caused by typo for currency
+                if statusCode == '400':
+
+                    error = str(exception).split(': ', 2)
+                    errorMsg = error[1]
+                    
+                    async with ctx.typing():
+                        await ctx.send("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
+                        await asyncio.sleep(2)
+
+                # Internal server error 
+                elif statusCode == '500':
+                    
+                    async with ctx.typing():
+                        await ctx.send("Oops! Server is down, please try again later!")
+                        await asyncio.sleep(2)
+                
+                # Too many requests error 
+                elif statusCode == '429':
+                    
+                    async with ctx.typing():
+                        await ctx.send("Oops! Too many requests have been made, please try again tomorrow!")
+                        await asyncio.sleep(2)
     
