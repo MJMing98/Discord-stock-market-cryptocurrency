@@ -224,16 +224,16 @@ class Crypto(dec.Cog):
 
             await asyncio.sleep(1.5)
         
-        print(currencyList)
-
         firstHalf = currencyList[:int(len(currencyList)/2)]
         secondHalf = currencyList[int(len(currencyList)/2):]
 
         await ctx.send('\n'.join(firstHalf))
         await ctx.send('\n'.join(secondHalf))
 
-        await ctx.send("First input in a crytpcurrency keyword, then the currency keyword to obtain the current market pair list price.")
+        await ctx.send("First input is a cryptocurrency keyword, then the currency keyword to obtain the current market pair list price.")
         await ctx.send("Example: !crypto BTC GBP")
+
+
 
 # Stock market cog
 class StockMarket(dec.Cog):
@@ -264,19 +264,22 @@ class StockMarket(dec.Cog):
             
             try:
                 # URL format of HTTPs request
+                urlSymbol = ("https://api.twelvedata.com/symbol_search?symbol={inputKeyword}".format(inputKeyword = stockKeyword))
+                responseSymbol = requests.get(urlSymbol)
+
+                # Check status from the returned response, enter except loop if returned response has an error message
+                responseSymbol.raise_for_status()
+
+                #Returns the object form of the returned JSON response, and obtain symbol data
+                dataSymbol = (responseSymbol.json())['data'][0]
+                stockExchange = dataSymbol["exchange"]
+
                 # First request for stock data
-                urlStock = ("https://api.twelvedata.com/time_series?symbol={inputKeyword}&interval=1min&outputsize=1&apikey={inputApiKey}".format(inputKeyword = stockKeyword, inputApiKey = smkey))
+                urlStock = ("https://api.twelvedata.com/time_series?symbol={inputKeyword}&exchange={inputExchange}&interval=1min&outputsize=1&apikey={inputApiKey}".format(inputKeyword = stockKeyword, inputExchange = stockExchange, inputApiKey = smkey))
                 responseStock = requests.get(urlStock)
 
                 # Check status from the returned response, enter except loop if returned response has an error message
                 responseStock.raise_for_status()
-
-                # Returns the object form of the returned JSON response, and have the bot print out the final prices
-                testdataStock = (responseStock.json())
-                testdataStock.raise_for_status()
-
-                print(testdataStock)
-                
                 dataStock = (responseStock.json())['values'][0]
                 
                 dataExchangeRate = 1
@@ -341,11 +344,23 @@ class StockMarket(dec.Cog):
 
             try:
                 # URL format of HTTPs request
-                # First request for stock data
-                urlStock = ("https://api.twelvedata.com/time_series?symbol={inputKeyword}&interval=1min&outputsize=1&apikey={inputApiKey}".format(inputKeyword = stockKeyword, inputApiKey = smkey))
-                responseStock = requests.get(urlStock)
+                # With stock market, it's a little different because different stock symbols use different indices
+                # So, first obtain the index for the queries symbol
+                urlSymbol = ("https://api.twelvedata.com/symbol_search?symbol={inputKeyword}".format(inputKeyword = stockKeyword))
+                responseSymbol = requests.get(urlSymbol)
 
                 # Check status from the returned response, enter except loop if returned response has an error message
+                responseSymbol.raise_for_status()
+
+                #Returns the object form of the returned JSON response, and obtain symbol data
+                dataSymbol = (responseSymbol.json())['data'][0]
+                stockExchange = dataSymbol["exchange"]
+
+                # Now request for stock data
+                urlStock = ("https://api.twelvedata.com/time_series?symbol={inputKeyword}&exchange={inputExchange}&interval=1min&outputsize=1&apikey={inputApiKey}".format(inputKeyword = stockKeyword, inputExchange = stockExchange, inputApiKey = smkey))
+                responseStock = requests.get(urlStock)
+
+                # Check status from the returned response
                 responseStock.raise_for_status()
 
                 # Returns the object form of the returned JSON response, and have the bot print out the final prices
@@ -398,4 +413,116 @@ class StockMarket(dec.Cog):
                     async with ctx.typing():
                         await ctx.send("Oops! Too many requests have been made, please try again tomorrow!")
                         await asyncio.sleep(2)
+
+
+    @stock.command(
+        name="help",
+        pass_context=True,
+        case_insensitive=True,
+        invoke_without_command=True,
+        aliases = ['h']
+    )
+            
+    async def help1(self, ctx):
+        async with ctx.typing():
+            await asyncio.sleep(0.75)
+        await ctx.send("The !stock command is used to check for stock prices!")
+        await ctx.send("Note that since the bot is currently using the basic plan for TwelveData, only American stocks are available.")
+        await ctx.send("Here are the available indices that are supported by the bot:")
+
+        async with ctx.typing():
+            indexList = []
+            url = ('https://api.twelvedata.com/exchanges?country=us&type=stock')
+            response = requests.get(url).json()['data']
+
+            for dict in response:
+                indexList.append(str(dict['name'] + ": " + dict['code']))
+
+            await asyncio.sleep(1.5)
+
+        await ctx.send('\n'.join(indexList))
+
+
+        await ctx.send("First input in a stock symbol, then the currency keyword to obtain the current market pair list price.")
+        await ctx.send("Example: !stock AMZN GBP")
+
+    @dec.group(
+        name="exchange",
+        pass_context=True,
+        case_insensitive=True,
+        invoke_without_command=True,
+        usage = ['currencyInputs']
+    )
     
+    async def exchange(self, ctx, *inputs):
+        
+        #Obtain the values from the 
+        currencyKeyword1 = inputs[0]
+        currencyKeyword2 = inputs[1]
+
+        # If third argument exists, let amount be that value, else it would be a 1:val currency exchange rate
+        try:
+            amount = inputs[2]
+        except:
+            amount = 1
+
+        try:
+            # Same thing as always, send a request to the API and convert the returned response to an object
+            urlExchangeRate = ("https://api.twelvedata.com/currency_conversion?symbol={inputCurrency1}/{inputCurrency2}&amount={inputAmount}&apikey={inputApiKey}".format(inputCurrency1 = currencyKeyword1, inputCurrency2 = currencyKeyword2, inputAmount = amount, inputApiKey = smkey))
+            responseExchangeRate = requests.get(urlExchangeRate)
+            responseExchangeRate.raise_for_status()
+
+            exchangeRateAmount = (responseExchangeRate.json())['amount']
+            exchangeRateSymbol = (responseExchangeRate.json())['symbol']
+
+            if amount == 1:
+                await ctx.send("Convertion rate for {} is {}1 to {}".format(exchangeRateSymbol, currencyKeyword1, currencyKeyword2 + str(exchangeRateAmount)))
+            else:
+                await ctx.send("Convertion rate for {} is {} to {}".format(exchangeRateSymbol, currencyKeyword1 + amount, currencyKeyword2 + str(exchangeRateAmount)))
+
+        # Error handling for HTTP requests
+        except requests.HTTPError as exception:
+            print(exception)
+            
+            # Obtain first character from exception, which is the statuscode
+            statusCode = str(exception).split()[0]
+
+            # Client error, most probably caused by typo for currency
+            if statusCode == '400':
+
+                error = str(exception).split(': ', 2)
+                errorMsg = error[1]
+                
+                async with ctx.typing():
+                    await ctx.send("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
+                    await asyncio.sleep(2)
+
+            # Internal server error 
+            elif statusCode == '500':
+                
+                async with ctx.typing():
+                    await ctx.send("Oops! Server is down, please try again later!")
+                    await asyncio.sleep(2)
+            
+            # Too many requests error 
+            elif statusCode == '429':
+                
+                async with ctx.typing():
+                    await ctx.send("Oops! Too many requests have been made, please try again tomorrow!")
+                    await asyncio.sleep(2)
+
+    @exchange.command(
+        name="help",
+        pass_context=True,
+        case_insensitive=True,
+        invoke_without_command=True
+    )
+
+    async def help2(self, ctx):
+        async with ctx.typing():
+            await asyncio.sleep(0.75)
+        await ctx.send("The !exchange command is used to check for currency exchange prices!")
+        await ctx.send("Not only does it check conversion rates between different native currencies, but it also allows for conversion rates from cryptocurrency to native currency as well.")
+
+        await ctx.send("First input in the current currency symbol, and then the desired currency symbol. An amount value can be added at the end as well, if not added the bot simply prints out the conversion rate between both currencies.")
+        await ctx.send("Example: \"!exchange GBP MYR 500\" would convert 500 GBPs to MYRs")
