@@ -1,10 +1,13 @@
 import discord
 import discord.ext.commands as dec
-from discord import Member
+from discord import member
 from discord import message
 from discord.ext.commands import bot
 from financeCog import News, Crypto, StockMarket
 
+# Allow intents on new members
+intents = discord.Intents.default()
+intents.members = True
 
 discClient = dec.Bot(command_prefix="!")
 
@@ -13,15 +16,11 @@ discClient = dec.Bot(command_prefix="!")
 async def on_ready():
     print(f'We have logged in as {discClient.user} - {discClient.user.id}')
 
-# Called when new members join the channel
-@discClient.event
-async def on_member_join(Member, ctx):
-    "Introduces a member into the channel."
-    await ctx.send('Welcome to the channel, {}!'.format(Member.name))
-
 # Create an event for when the bot receives a message
 @discClient.command(
-    name="HelpMe"
+    name="welcome",
+    case_insensitive = True,
+    pass_context = True
 )
 async def initResponse(ctx):
     await ctx.send("Hi, my name is {}, how may I help?".format(discClient.user))

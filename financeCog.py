@@ -8,6 +8,8 @@ import requests
 from random import randint, choice
 import asyncio
 
+
+
 # Import keys for 12Data and Coinbase pro
 with open("stockmarketKey.key") as StockKey:
     smkey = StockKey.read()
@@ -35,9 +37,9 @@ class News(dec.Cog):
         usage=['inputs']
     )
 
-    async def printNewsRoot(self, ctx, input = "empty"):
+    async def printNewsRoot(self, ctx, *input):
 
-        if input == "empty":
+        if len(input) < 1:
 
             # Generate random number for country and params for top story get
             #randCountry = choice(newsCountry)
@@ -58,9 +60,7 @@ class News(dec.Cog):
             articleDescription = article['description']
             articleURL = article['url']
             
-            await ctx.send("Title: " + articleTitle)
-            await ctx.send("Description: " + articleDescription)
-            await ctx.send("URL: " + articleURL)
+            await ctx.reply("Title: " + articleTitle + "\nDescription: " + articleDescription + "\nURL: " + articleURL)
 
         else:
             lang = 'en'
@@ -68,7 +68,10 @@ class News(dec.Cog):
             randCate = 'business' if randint(1,10) % 2 == 1 else 'technology'
             randPageSize = randint(2,100)
 
-            url = ('https://newsapi.org/v2/everything?q={inputPlaceholder}&language={inputLang}&sortBy={inputSortBy}&pageSize={inputPageSize}&apiKey={apikey}'.format(inputPlaceholder = input.strip(), inputLang = lang, inputSortBy = randSortBy, inputPageSize = randPageSize, apikey = financeKey))
+            processedString = "%".join(input)
+
+            url = ('https://newsapi.org/v2/everything?q={inputPlaceholder}&language={inputLang}&sortBy={inputSortBy}&pageSize={inputPageSize}&apiKey={apikey}'.format(inputPlaceholder = processedString, inputLang = lang, inputSortBy = randSortBy, inputPageSize = randPageSize, apikey = financeKey))
+            print(url)
             response = requests.get(url).json()
 
             singleArticle = response['articles']
@@ -80,9 +83,7 @@ class News(dec.Cog):
             articleDescription = article['description']
             articleURL = article['url']
             
-            await ctx.send("Title: " + articleTitle)
-            await ctx.send(articleDescription)
-            await ctx.send("URL: " + articleURL)
+            await ctx.reply("Title: " + articleTitle + "\nDescription: " + articleDescription + "\nURL: " + articleURL)
 
 # Cryptocurrency cog
 class Crypto(dec.Cog):
@@ -113,10 +114,10 @@ class Crypto(dec.Cog):
             def check(msg):
                 return msg.author == ctx.author and msg.channel == ctx.channel
 
-            await ctx.send("Please input cryptocurrency keyword (e.g. BTC or ETH)!")
+            await ctx.reply("Please input cryptocurrency keyword (e.g. BTC or ETH)!")
             cryptoKeyword = await self.bot.wait_for('message', check=check)
 
-            await ctx.send("Please input currency keyword (e.g. USD or GBP)!")
+            await ctx.reply("Please input currency keyword (e.g. USD or GBP)!")
             currencyKeyword = await self.bot.wait_for('message', check=check)
 
             cryptoID = str(cryptoKeyword.content.strip().rstrip(".")) + "-" + str(currencyKeyword.content.strip().rstrip("."))
@@ -130,7 +131,7 @@ class Crypto(dec.Cog):
                 data = (response.json())['data']
 
                 quote = 'Current stock ' + cryptoID + ' price: ' + data["currency"] + data['amount']
-                await ctx.send(quote)
+                await ctx.reply(quote)
 
             # Error handling for HTTP requests
             except requests.HTTPError as exception:
@@ -140,20 +141,13 @@ class Crypto(dec.Cog):
                 statusCode = str(exception).split()[0]
 
                 if statusCode == '400':
-
-                    error = str(exception).split(': ', 2)
-                    errorMsg = error[1]
                     
-                    async with ctx.typing():
-                        await ctx.send("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
-                        await asyncio.sleep(2)
+                    await ctx.reply("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
 
                 # Internal server error 
                 elif statusCode == '500':
                     
-                    async with ctx.typing():
-                        await ctx.send("Oops! Server is down, please try again later!")
-                        await asyncio.sleep(2)
+                    await ctx.reply("Oops! Server is down, please try again later!")
 
         else:
             
@@ -174,7 +168,7 @@ class Crypto(dec.Cog):
                 data = (response.json())['data']
 
                 quote = 'Current stock ' + cryptoID + ' price: ' + data["currency"] + data['amount']
-                await ctx.send(quote)
+                await ctx.reply(quote)
             
             # Error handling for HTTP requests
             except requests.HTTPError as exception:
@@ -184,21 +178,14 @@ class Crypto(dec.Cog):
                 statusCode = str(exception).split()[0]
 
                 # Client error, most probably caused by typo for currency
-                if statusCode == '400':
-
-                    error = str(exception).split(': ', 2)
-                    errorMsg = error[1]
+                if statusCode == '400' or '404':
                     
-                    async with ctx.typing():
-                        await ctx.send("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
-                        await asyncio.sleep(2)
+                    await ctx.reply("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
 
                 # Internal server error 
                 elif statusCode == '500':
                     
-                    async with ctx.typing():
-                        await ctx.send("Oops! Server is down, please try again later!")
-                        await asyncio.sleep(2)
+                    await ctx.reply("Oops! Server is down, please try again later!")
 
     @crypto.command(
         name="help",
@@ -209,12 +196,11 @@ class Crypto(dec.Cog):
     )
             
     async def help(self, ctx):
-        async with ctx.typing():
-            await asyncio.sleep(0.75)
-        await ctx.send("The !crypto command is used to check for cryptocurrency prices!")
-        await ctx.send("Here are the available native currencies that are supported by the bot:")
 
-        async with ctx.typing():
+        with ctx.typing():
+            await asyncio.sleep(0.75)
+
+            await ctx.reply("The !crypto command is used to check for cryptocurrency prices!\nHere are the available native currencies that are supported by the bot:")
             currencyList = []
             url = ('https://api.coinbase.com/v2/currencies')
             response = requests.get(url).json()
@@ -224,16 +210,12 @@ class Crypto(dec.Cog):
 
             await asyncio.sleep(1.5)
         
-        firstHalf = currencyList[:int(len(currencyList)/2)]
-        secondHalf = currencyList[int(len(currencyList)/2):]
+            firstHalf = currencyList[:int(len(currencyList)/2)]
+            secondHalf = currencyList[int(len(currencyList)/2):]
 
-        await ctx.send('\n'.join(firstHalf))
-        await ctx.send('\n'.join(secondHalf))
-
-        await ctx.send("First input is a cryptocurrency keyword, then the currency keyword to obtain the current market pair list price.")
-        await ctx.send("Example: !crypto BTC GBP")
-
-
+            await ctx.send('\n'.join(firstHalf) + '\n'.join(secondHalf) + 
+                            "First input is a cryptocurrency keyword, then the currency keyword to obtain the current market pair list price. \
+                            \nExample: !crypto BTC GBP")
 
 # Stock market cog
 class StockMarket(dec.Cog):
@@ -261,7 +243,7 @@ class StockMarket(dec.Cog):
             # input argument returns a list
             stockKeyword = inputs[0]
             currencyKeyword = inputs[1]
-            
+                
             try:
                 # URL format of HTTPs request
                 urlSymbol = ("https://api.twelvedata.com/symbol_search?symbol={inputKeyword}".format(inputKeyword = stockKeyword))
@@ -271,7 +253,9 @@ class StockMarket(dec.Cog):
                 responseSymbol.raise_for_status()
 
                 #Returns the object form of the returned JSON response, and obtain symbol data
-                dataSymbol = (responseSymbol.json())['data'][0]
+                dataSymbol = next((exchange for exchange in responseSymbol.json()['data'] if exchange['country'] == 'United States'))
+
+                #dataSymbol = (responseSymbol.json())['data'] if (responseSymbol.json())['data']
                 stockExchange = dataSymbol["exchange"]
 
                 # First request for stock data
@@ -280,6 +264,7 @@ class StockMarket(dec.Cog):
 
                 # Check status from the returned response, enter except loop if returned response has an error message
                 responseStock.raise_for_status()
+                print(responseStock.json())
                 dataStock = (responseStock.json())['values'][0]
                 
                 dataExchangeRate = 1
@@ -294,10 +279,15 @@ class StockMarket(dec.Cog):
                     # Do the same thing for exchange rate
                     dataExchangeRate = (responseExchangeRate.json())['rate']
 
+                print(dataStock)
+
                 newPrice = float(dataStock['close']) * dataExchangeRate
 
                 quote = 'Current stock ' + stockKeyword + ' price: ' + currencyKeyword + str(newPrice)
-                await ctx.send(quote)
+                await ctx.reply(quote)
+
+            except StopIteration:
+                await ctx.reply("Keywords not found! Bot can only process US stock market data!")
             
             # Error handling for HTTP requests
             except requests.HTTPError as exception:
@@ -312,23 +302,17 @@ class StockMarket(dec.Cog):
                     error = str(exception).split(': ', 2)
                     errorMsg = error[1]
                     
-                    async with ctx.typing():
-                        await ctx.send("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
-                        await asyncio.sleep(2)
+                    await ctx.reply("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
 
                 # Internal server error 
                 elif statusCode == '500':
                     
-                    async with ctx.typing():
-                        await ctx.send("Oops! Server is down, please try again later!")
-                        await asyncio.sleep(2)
+                    await ctx.reply("Oops! Server is down, please try again later!")
                 
                 # Too many requests error 
                 elif statusCode == '429':
                     
-                    async with ctx.typing():
-                        await ctx.send("Oops! Too many requests have been made, please try again tomorrow!")
-                        await asyncio.sleep(2)
+                    await ctx.reply("Oops! Too many requests have been made, please try again tomorrow!")
             
         else:
             # Creates a checking function, returns author and channel names from context and assigns it to our received msg
@@ -336,10 +320,10 @@ class StockMarket(dec.Cog):
             def check(msg):
                 return msg.author == ctx.author and msg.channel == ctx.channel
 
-            await ctx.send("Please input stock keyword (e.g. AAPL for Apple or GOOG for Google)!")
+            await ctx.reply("Please input stock keyword (e.g. AAPL for Apple or GOOG for Google)!")
             stockKeyword = await self.bot.wait_for('message', check=check)
 
-            await ctx.send("Please input currency keyword (e.g. USD or GBP)!")
+            await ctx.reply("Please input currency keyword (e.g. USD or GBP)!")
             currencyKeyword = await self.bot.wait_for('message', check=check)
 
             try:
@@ -353,7 +337,9 @@ class StockMarket(dec.Cog):
                 responseSymbol.raise_for_status()
 
                 #Returns the object form of the returned JSON response, and obtain symbol data
-                dataSymbol = (responseSymbol.json())['data'][0]
+                dataSymbol = next((exchange for exchange in responseSymbol.json()['data'] if exchange['country'] == 'United States'))
+
+                #dataSymbol = (responseSymbol.json())['data'] if (responseSymbol.json())['data']
                 stockExchange = dataSymbol["exchange"]
 
                 # Now request for stock data
@@ -362,7 +348,7 @@ class StockMarket(dec.Cog):
 
                 # Check status from the returned response
                 responseStock.raise_for_status()
-
+    
                 # Returns the object form of the returned JSON response, and have the bot print out the final prices
                 dataStock = (responseStock.json())['values'][0]
                 
@@ -381,7 +367,13 @@ class StockMarket(dec.Cog):
                 newPrice = float(dataStock['close']) * dataExchangeRate
 
                 quote = 'Current stock ' + stockKeyword + ' price: ' + currencyKeyword + str(newPrice)
-                await ctx.send(quote)
+                await ctx.reply(quote)
+
+            except StopIteration:
+                with ctx.typing():
+                    await asyncio.sleep(0.5)
+                    await ctx.reply("Keywords not found! Bot can only process US stock market data!")
+
             
             # Error handling for HTTP requests
             except requests.HTTPError as exception:
@@ -396,24 +388,17 @@ class StockMarket(dec.Cog):
                     error = str(exception).split(': ', 2)
                     errorMsg = error[1]
                     
-                    async with ctx.typing():
-                        await ctx.send("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
-                        await asyncio.sleep(2)
+                    await ctx.reply("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
 
                 # Internal server error 
                 elif statusCode == '500':
                     
-                    async with ctx.typing():
-                        await ctx.send("Oops! Server is down, please try again later!")
-                        await asyncio.sleep(2)
+                    await ctx.reply("Oops! Server is down, please try again later!")
                 
                 # Too many requests error 
                 elif statusCode == '429':
                     
-                    async with ctx.typing():
-                        await ctx.send("Oops! Too many requests have been made, please try again tomorrow!")
-                        await asyncio.sleep(2)
-
+                    await ctx.reply("Oops! Too many requests have been made, please try again tomorrow!")
 
     @stock.command(
         name="help",
@@ -424,13 +409,9 @@ class StockMarket(dec.Cog):
     )
             
     async def help1(self, ctx):
-        async with ctx.typing():
-            await asyncio.sleep(0.75)
-        await ctx.send("The !stock command is used to check for stock prices!")
-        await ctx.send("Note that since the bot is currently using the basic plan for TwelveData, only American stocks are available.")
-        await ctx.send("Here are the available indices that are supported by the bot:")
+        with ctx.typing():
+            await asyncio.sleep(1)
 
-        async with ctx.typing():
             indexList = []
             url = ('https://api.twelvedata.com/exchanges?country=us&type=stock')
             response = requests.get(url).json()['data']
@@ -438,13 +419,12 @@ class StockMarket(dec.Cog):
             for dict in response:
                 indexList.append(str(dict['name'] + ": " + dict['code']))
 
-            await asyncio.sleep(1.5)
-
-        await ctx.send('\n'.join(indexList))
-
-
-        await ctx.send("First input in a stock symbol, then the currency keyword to obtain the current market pair list price.")
-        await ctx.send("Example: !stock AMZN GBP")
+            await ctx.reply("The !stock command is used to check for stock prices! \
+                            \nNote that since the bot is currently using the basic plan for TwelveData, only American stocks are available.\
+                            \nHere are the available indices that are supported by the bot:" + '\n'.join(indexList) + 
+                            "First input in a stock symbol, then the currency keyword to obtain the current market pair list price.\
+                            \nExample: !stock AMZN GBP")
+                            
 
     @dec.group(
         name="exchange",
@@ -476,9 +456,9 @@ class StockMarket(dec.Cog):
             exchangeRateSymbol = (responseExchangeRate.json())['symbol']
 
             if amount == 1:
-                await ctx.send("Convertion rate for {} is {}1 to {}".format(exchangeRateSymbol, currencyKeyword1, currencyKeyword2 + str(exchangeRateAmount)))
+                await ctx.reply("Convertion rate for {} is {}1 to {}".format(exchangeRateSymbol, currencyKeyword1, currencyKeyword2 + str(exchangeRateAmount)))
             else:
-                await ctx.send("Convertion rate for {} is {} to {}".format(exchangeRateSymbol, currencyKeyword1 + amount, currencyKeyword2 + str(exchangeRateAmount)))
+                await ctx.reply("Convertion rate for {} is {} to {}".format(exchangeRateSymbol, currencyKeyword1 + amount, currencyKeyword2 + str(exchangeRateAmount)))
 
         # Error handling for HTTP requests
         except requests.HTTPError as exception:
@@ -493,23 +473,17 @@ class StockMarket(dec.Cog):
                 error = str(exception).split(': ', 2)
                 errorMsg = error[1]
                 
-                async with ctx.typing():
-                    await ctx.send("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
-                    await asyncio.sleep(2)
+                await ctx.reply("Keywords not found! Make sure the spelling is correct and the keyword for the wanted currency is valid!")
 
             # Internal server error 
             elif statusCode == '500':
                 
-                async with ctx.typing():
-                    await ctx.send("Oops! Server is down, please try again later!")
-                    await asyncio.sleep(2)
+                await ctx.reply("Oops! Server is down, please try again later!")
             
             # Too many requests error 
             elif statusCode == '429':
                 
-                async with ctx.typing():
-                    await ctx.send("Oops! Too many requests have been made, please try again tomorrow!")
-                    await asyncio.sleep(2)
+                await ctx.reply("Oops! Too many requests have been made, please try again tomorrow!")
 
     @exchange.command(
         name="help",
@@ -519,10 +493,9 @@ class StockMarket(dec.Cog):
     )
 
     async def help2(self, ctx):
-        async with ctx.typing():
+        with ctx.typing():
             await asyncio.sleep(0.75)
-        await ctx.send("The !exchange command is used to check for currency exchange prices!")
-        await ctx.send("Not only does it check conversion rates between different native currencies, but it also allows for conversion rates from cryptocurrency to native currency as well.")
-
-        await ctx.send("First input in the current currency symbol, and then the desired currency symbol. An amount value can be added at the end as well, if not added the bot simply prints out the conversion rate between both currencies.")
-        await ctx.send("Example: \"!exchange GBP MYR 500\" would convert 500 GBPs to MYRs")
+            await ctx.reply("The !exchange command is used to check for currency exchange prices!\
+                            \nNot only does it check conversion rates between different native currencies, but it also allows for conversion rates from cryptocurrency to native currency as well.\
+                            \nFirst input in the current currency symbol, and then the desired currency symbol. An amount value can be added at the end as well, if not added the bot simply prints out the conversion rate between both currencies.\
+                            \nExample: \"!exchange GBP MYR 500\" would convert 500 GBPs to MYRs")
