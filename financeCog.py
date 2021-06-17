@@ -9,7 +9,6 @@ from random import randint, choice
 import asyncio
 
 
-
 # Import keys for 12Data and Coinbase pro
 with open("stockmarketKey.key") as StockKey:
     smkey = StockKey.read()
@@ -68,10 +67,9 @@ class News(dec.Cog):
             randCate = 'business' if randint(1,10) % 2 == 1 else 'technology'
             randPageSize = randint(2,100)
 
-            processedString = "%".join(input)
+            processedString = "-".join(input)
 
             url = ('https://newsapi.org/v2/everything?q={inputPlaceholder}&language={inputLang}&sortBy={inputSortBy}&pageSize={inputPageSize}&apiKey={apikey}'.format(inputPlaceholder = processedString, inputLang = lang, inputSortBy = randSortBy, inputPageSize = randPageSize, apikey = financeKey))
-            print(url)
             response = requests.get(url).json()
 
             singleArticle = response['articles']
@@ -84,6 +82,21 @@ class News(dec.Cog):
             articleURL = article['url']
             
             await ctx.reply("Title: " + articleTitle + "\nDescription: " + articleDescription + "\nURL: " + articleURL)
+
+    @printNewsRoot.command(
+        name="help",
+        pass_context=True,
+        case_insensitive=True,
+        invoke_without_command=True,
+        aliases = ['h']
+    )
+
+    async def help(self, ctx):
+
+        with ctx.typing():
+            await asyncio.sleep(1)
+            await ctx.reply("The news command makes the bot print out news article that are of interest to the user.\nSimply type !news and the bot will print out new business and technology related news articles.\nThe bot can also search up news based on input keywords, for example try \"!news AMZN\" for news related to Amazon's stock or try \"!news Elon Musk\" for news about Elon Musk!")
+
 
 # Cryptocurrency cog
 class Crypto(dec.Cog):
@@ -103,8 +116,13 @@ class Crypto(dec.Cog):
 
     # Example would be 'BTC-GBP'
     async def crypto(self, ctx, *input):
-        
+
         if ctx.invoked_subcommand is not None:
+            return
+
+        if len(input) != 2 and len(input) != 0:
+
+            await ctx.reply("2 arguments accepted only: 1 keyword for cryptocurrency, 1 for native/base currency!")
             return
 
         if not input:
@@ -200,7 +218,7 @@ class Crypto(dec.Cog):
         with ctx.typing():
             await asyncio.sleep(0.75)
 
-            await ctx.reply("The !crypto command is used to check for cryptocurrency prices!\nHere are the available native currencies that are supported by the bot:")
+            await ctx.reply("The !crypto command is used to check for cryptocurrency prices!\nHere are the available native currencies that are supported by the bot:\n")
             currencyList = []
             url = ('https://api.coinbase.com/v2/currencies')
             response = requests.get(url).json()
@@ -238,6 +256,11 @@ class StockMarket(dec.Cog):
         if ctx.invoked_subcommand is not None:
             return
 
+        if len(inputs) != 2 and len(inputs) != 0:
+
+            await ctx.reply("2 arguments accepted only: 1 for stock market keyword, 1 for native/base currency!")
+            return
+
         if inputs:
                         
             # input argument returns a list
@@ -264,7 +287,6 @@ class StockMarket(dec.Cog):
 
                 # Check status from the returned response, enter except loop if returned response has an error message
                 responseStock.raise_for_status()
-                print(responseStock.json())
                 dataStock = (responseStock.json())['values'][0]
                 
                 dataExchangeRate = 1
@@ -278,8 +300,6 @@ class StockMarket(dec.Cog):
 
                     # Do the same thing for exchange rate
                     dataExchangeRate = (responseExchangeRate.json())['rate']
-
-                print(dataStock)
 
                 newPrice = float(dataStock['close']) * dataExchangeRate
 
@@ -421,11 +441,10 @@ class StockMarket(dec.Cog):
 
             await ctx.reply("The !stock command is used to check for stock prices! \
                             \nNote that since the bot is currently using the basic plan for TwelveData, only American stocks are available.\
-                            \nHere are the available indices that are supported by the bot:" + '\n'.join(indexList) + 
+                            \nHere are the available indices that are supported by the bot:\n" + '\n'.join(indexList) + 
                             "First input in a stock symbol, then the currency keyword to obtain the current market pair list price.\
                             \nExample: !stock AMZN GBP")
                             
-
     @dec.group(
         name="exchange",
         pass_context=True,
@@ -436,6 +455,11 @@ class StockMarket(dec.Cog):
     
     async def exchange(self, ctx, *inputs):
         
+        if len(inputs) != 2 and len(inputs) != 3:
+
+            await ctx.reply("2 currency types are needed!")
+            return
+
         #Obtain the values from the 
         currencyKeyword1 = inputs[0]
         currencyKeyword2 = inputs[1]
